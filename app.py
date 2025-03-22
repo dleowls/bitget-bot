@@ -4,6 +4,7 @@ import base64
 import hmac
 import hashlib
 import json
+import traceback
 import requests
 from flask import Flask, request, jsonify
 from dotenv import load_dotenv
@@ -17,7 +18,7 @@ PASSPHRASE = os.getenv("BITGET_API_PASSPHRASE")
 app = Flask(__name__)
 
 def place_bitget_order(symbol="BTCUSDT", side="open_long", size=0.001):
-    print("📦 [DEBUG] Bitget 주문 함수 진입!")  # 디버그 확인용
+    print("📦 [DEBUG] Bitget 주문 함수 진입!")
     print(f"📦 [DEBUG] 주문 파라미터: symbol={symbol}, side={side}, size={size}")
 
     url = "https://api.bitget.com/api/mix/v1/order/placeOrder"
@@ -55,20 +56,25 @@ def place_bitget_order(symbol="BTCUSDT", side="open_long", size=0.001):
 @app.route("/hook", methods=["POST"])
 def webhook():
     try:
-        data = request.get_json()
+        data = request.get_json(force=True)
         print("📩 받은 웹훅 데이터:", data)
 
-        if not data:
-            return jsonify({"error": "No data"}), 400
+        signal = data.get("signal", "").strip().upper()
+        symbol = data.get("symbol", "BTCUSDT")
+        price = data.get("price", "")
+        time_ = data.get("time", "")
 
-        if data.get("signal") == "LONG ENTRY":
+        print(f"🧾 파싱된 데이터: signal={signal}, symbol={symbol}, price={price}, time={time_}")
+
+        if signal == "LONG ENTRY":
             print("✅ 롱 포지션 진입 요청 들어옴!")
-            place_bitget_order()
+            place_bitget_order(symbol=symbol, side="open_long", size=0.001)
 
         return jsonify({"status": "received"}), 200
 
     except Exception as e:
-        print("❌ 웹훅 처리 중 에러 발생:", e)
+        print("❌ 웹훅 처리 중 에러 발생:")
+        traceback.print_exc()
         return jsonify({"error": str(e)}), 500
 
 if __name__ == "__main__":
