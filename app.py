@@ -16,7 +16,7 @@ PASSPHRASE = os.getenv("BITGET_API_PASSPHRASE")
 
 app = Flask(__name__)
 
-def place_bitget_order(symbol="BTCUSDT", side="open_long", size=0.01):
+def place_bitget_order(symbol="BTCUSDT", side="open_long", size=0.005):
     url = "https://api.bitget.com/api/mix/v1/order/placeOrder"
     timestamp = str(int(time.time() * 1000))
 
